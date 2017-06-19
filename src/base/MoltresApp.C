@@ -35,6 +35,7 @@
 #include "INSSymmetryAxisBC.h"
 #include "MatDiffusionFluxBC.h"
 #include "CoupledScalarAdvectionNoBCBC.h"
+#include "DirichletPostProcessorBC.h"
 
 // Materials
 #include "GenericMoltresMaterial.h"
@@ -137,6 +138,7 @@ MoltresApp::registerObjects(Factory & factory)
   registerBoundaryCondition(INSOutflowBC);
   registerBoundaryCondition(INSSymmetryAxisBC);
   registerBoundaryCondition(MatDiffusionFluxBC);
+  registerBoundaryCondition(DirichletPostProcessorBC);
   registerMaterial(GenericMoltresMaterial);
   registerMaterial(CammiFuel);
   registerMaterial(CammiModerator);
