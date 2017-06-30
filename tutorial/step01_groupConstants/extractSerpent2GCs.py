@@ -16,14 +16,51 @@ except ImportError as err:
     print( err )
     quit()
 
+<<<<<<< HEAD
 def makePropertiesDir(inmats, outdir, filebase, mapFile, unimapFile, serp1=False, fromMain=False):
     """ Takes in a mapping from branch names to material temperatures,
     then makes a properties directory.
     Serp1 means that the group transfer matrix is transposed."""
+=======
+def makePropertiesFromSerpentOutput(outfiles, outdir, basename, serp1=False, useB1=False, uni2matname=None, fromMain = False, usen2n=True):
+    """ Takes serpent 2 output from a _res.m file, and translates 
+    into moltres-compatible neutronics parameters.
+
+    Args:
+        outfile -- serpent output, *_res.m. Should have group constants
+        outdir  -- the moltres property dir to be created
+        basename-- base file name for moltres. This goes in the moltres input file.
+
+    Kwargs:
+        serp1   -- bool. if true, assumes that group scattering matrix is transposed.
+                    defaults to false.
+
+        useB1   -- bool. if true, uses B1-generated group constants. These are a
+                    spectrum-adjusted technique for making infinite lattice group
+                    constants work for whole-core.
+                    defaults to false.
+
+        uni2matname -- dict. set this if you're running this function from python, not terminal.
+                        makes human-readable input for moltres. Otherwise it would be hard to
+                        tell which material is which. Maps a universe name in string form to
+                        the new name. e.g. {'1':'fuel','2':'moder'}
+
+        fromMain -- don't use this. for this script's use.
+
+        usen2n -- bool. defaults to true. Whether to include scattering production reactions
+                        like (n,2n) in the group scattering matrix.
+
+
+
+    Returns:
+        tuple[2]-- number of groups found (int)
+    """
+>>>>>>> daaa08b... trying to write parser to be general.. gettin close
 
     if serp1:
         raise NotImplementedError("C'mon, just get serpent 2!")
 
+<<<<<<< HEAD
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
     print("Making properties for materials:")
@@ -76,6 +113,99 @@ def makePropertiesDir(inmats, outdir, filebase, mapFile, unimapFile, serp1=False
 
     return None
 
+=======
+    # try all the i/o first
+    try:
+        os.mkdir(outdir)
+    except IOError as err:
+        print("Looks like some outdir doesn't exist, or you don't have the right")
+        print("permissions.")
+        print( err )
+        quit()
+
+    # list of (mat, temp, output dictionary) for serpent results at each temperature
+    dictTempList = []
+
+    nUni = None
+
+    # loop through input files
+    for outfile in outfiles:
+
+        infile = open(outfile, 'r')
+
+        # fix me
+        isFromBranching = 
+
+        if not isFromBranching:
+            
+            # if not from branching, the temperature of the material must be read in:
+            # following Mr. Lindsay's original form, it should be in the file name
+            temp = [ch for ch in outfile if ch.isdigit()]
+            temp = float(temp)
+            materL= [mat for mat in uni2matname.keys() if mat in outfile]
+            if len(materL) != 1:
+                raise Exception("couldnt read mat name from outfile {}".format(outfile))
+            mater = materL[0]
+            print("Temperature of material {} was found to be {} K.".format())
+
+            # load the pyne-parsed dictionary if the sss out isn't from branching
+            sssOut = sss.parse_res(infile)
+            infile.close()
+
+            dictTempList.append( (mater,temp,sssOut) )
+        else:
+            # call the new pyne reader
+            sssOut = sss.parse_bran(infile)
+            infile.close()
+
+
+        # get materials for each one
+        for mat in uni2matname.values():
+
+
+    # whether to use B1
+    # this should only be used if a unit cell was done in serpent
+    prefix = 'INF_' if not useB1 else 'B1_'
+
+    # now, map universe names to moltres material names, if desired.
+    # this just makes the output prettier.
+    if uni2matname == None and fromMain:
+        uni2matname = dict.fromkeys(sssOut['GC_UNIVERSE_NAME'], None)
+        for uni in uni2matname.keys():
+            matName= input("Please give a material name for universe {}, then hit enter:\n".format(uni))
+            uni2matname[uni] = matName
+    elif unit2matname == None:
+        print("See pydoc <thisfile>.makePropertiesFromSerpentOutput")
+        raise Exception("If you're running this as a function, set a uni2matname map through the kwargs.")
+
+    # now, look through it for the good stuff (GCs):
+    scatMat = 'SP0' if usen2n else 'P0'
+    goodStuff = ['REMXS', 'FISSXS', 'NSF', 'FISSE', 'DIFFCOEF', 'RECIPVEL', scatMat]
+    # by the way, NSF -> nu * Sigma_{fission}
+    # FYI, the other scattering matrices, like SP1, S5, etc, are the higher order legendre moment scattering
+    
+    # now, just loop through the good stuff, and print them in moltres-compatible files
+    matname2uni = {k,v for v,k in uni2matname.items()}
+    for goodThing in goodStuff:
+
+        for mat in uni2matname.values():
+
+            # get index of mat, ie order it appeared in output file:
+            matIndex=sssOut['GC_UNIVERSE_NAME'].index(matname2uni[mat])
+
+            with open(outdir+'/'+basename+'_'+mat+'_'+goodThing+'.txt', 'w') as fh:
+
+                # find temperatures
+                for temp, paramDict in zip(temperatures, dictTempList):
+
+
+
+
+
+
+    # might as well return something, bc why not (eg debug)
+    return sssOut
+>>>>>>> daaa08b... trying to write parser to be general.. gettin close
 
 if __name__ == '__main__':
 
@@ -91,13 +221,26 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+<<<<<<< HEAD
     # these are unpacked, so it fails if they werent passed to the script
     inmats = args.materials
+=======
+    if len(args.serpentOutputFile)>1 or len(args.outDir)>1:
+        raise NotImplementedError("Automatically making several property dirs in the future may be supported, but not now.")
+
+    # these are unpacked,so it fails if they werent passed to the script
+    infile = args.serpentOutputFile 
+>>>>>>> daaa08b... trying to write parser to be general.. gettin close
     outdir = args.outDir[0]
     fileBase = args.fileBase[0]
     mapfile = args.mapFile[0]
     unimapfile = args.universeMap[0]
 
+<<<<<<< HEAD
     makePropertiesDir(inmats, outdir, fileBase, mapfile,unimapfile, serp1=args.serp1, fromMain = True)
+=======
+
+    makePropertiesFromSerpentOutput(infile, outdir, serp1=args.serp1, fromMain = True)
+>>>>>>> daaa08b... trying to write parser to be general.. gettin close
 
     print("Successfully made property files in directory {}.".format(outdir))
