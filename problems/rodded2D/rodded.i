@@ -20,17 +20,13 @@ diri_temp=922
 
 [Problem]
   coord_type = RZ
+  kernel_coverage_check = false
 []
 
 [Variables]
   [./temp]
     initial_condition = ${ini_temp}
     scaling = 1e-4
-  [../]
-  [./rod_pos]
-    family = SCALAR
-    order = FIRST
-    initial_condition = 60 # cm from bottom of core
   [../]
 []
 
@@ -140,6 +136,14 @@ diri_temp=922
     derivative_order = 1
     block = 'moder'
   [../]
+  [./rho_crod]
+    type = DerivativeParsedMaterial
+    f_name = rho
+    function = '1.86e-3 * exp(-1.8 * 1.0e-5 * (temp - 922))'
+    args = 'temp'
+    derivative_order = 1
+    block = 'cRod'
+  [../]
   [./cRod]
     type = RoddedMaterial
     property_tables_root = '../../tutorial/step01_groupConstants/MSREProperties/msre_gentry_4gmoder_'
@@ -147,8 +151,9 @@ diri_temp=922
     prop_names = 'k cp'
     prop_values = '.312 1760' # Cammi 2011 at 908 K
     block = 'cRod'
-    rodPosition = rod_pos # MOOSE scalar variable for rod position
-    absorb_factor = 10000 # how much more absorbing than usual in absorbing region?
+    rodPosition = 70.0 #cm
+    absorb_factor = 1e10 # how much more absorbing than usual in absorbing region?
+    rodDimension = y
   [../]
 []
 
@@ -172,8 +177,8 @@ diri_temp=922
   [./TimeStepper]
     type = IterationAdaptiveDT
     dt = 1e-8
-    cutback_factor = 0.5
-    growth_factor = 1.05
+    cutback_factor = 0.4
+    growth_factor = 1.2
     optimal_iterations = 20
   [../]
 []
