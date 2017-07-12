@@ -15,8 +15,7 @@ diri_temp=922
 []
 
 [Mesh]
-  file = '2d_lattice_structured.msh'
-  # file = '2d_lattice_structured_jac.msh'
+  file = '2d_rodded_lattice.msh'
 [../]
 
 [Problem]
@@ -27,6 +26,11 @@ diri_temp=922
   [./temp]
     initial_condition = ${ini_temp}
     scaling = 1e-4
+  [../]
+  [./rod_pos]
+    family = SCALAR
+    order = FIRST
+    initial_condition = 60 # cm from bottom of core
   [../]
 []
 
@@ -45,7 +49,7 @@ diri_temp=922
 
 [Nt]
   var_name_base = group
-  vacuum_boundaries = 'fuel_bottoms fuel_tops moder_bottoms moder_tops outer_wall'
+  vacuum_boundaries = 'fuel_bottoms fuel_tops moder_bottoms moder_tops outer_wall cRod_top cRod_bot'
   create_temperature_var = false
 []
 
@@ -82,18 +86,8 @@ diri_temp=922
 []
 
 [BCs]
-  #[./vacuum_group1]
-  #  type = VacuumConcBC
-  #  boundary = 'fuel_bottoms fuel_tops moder_bottoms moder_tops outer_wall'
-  #  variable = group1
-  #[../]
-  #[./vacuum_group2]
-  #  type = VacuumConcBC
-  #  boundary = 'fuel_bottoms fuel_tops moder_bottoms moder_tops outer_wall'
-  #  variable = group2
-  #[../]
   [./temp_diri_cg]
-    boundary = 'moder_bottoms fuel_bottoms outer_wall'
+    boundary = 'moder_bottoms fuel_bottoms outer_wall cRod_bot'
     type = FunctionDirichletBC
     function = 'temp_bc_func'
     variable = temp
@@ -145,6 +139,16 @@ diri_temp=922
     args = 'temp'
     derivative_order = 1
     block = 'moder'
+  [../]
+  [./cRod]
+    type = RoddedMaterial
+    property_tables_root = '../../tutorial/step01_groupConstants/MSREProperties/msre_gentry_4gmoder_'
+    interp_type = 'spline'
+    prop_names = 'k cp'
+    prop_values = '.312 1760' # Cammi 2011 at 908 K
+    block = 'cRod'
+    rodPosition = rod_pos # MOOSE scalar variable for rod position
+    absorb_factor = 10000 # how much more absorbing than usual in absorbing region?
   [../]
 []
 
@@ -225,7 +229,7 @@ diri_temp=922
   print_linear_residuals = true
   [./exodus]
     type = Exodus
-    file_base = 'auto_diff_rho'
+    file_base = 'rodded'
     execute_on = 'timestep_end'
   [../]
 []
