@@ -44,6 +44,8 @@ validParams<NtAction>()
       "Whether the temperature variable should use discontinuous basis functions.");
   params.addParam<bool>(
       "eigen", false, "Whether to run an eigen- instead of a transient- simulation.");
+  params.addParam<bool>(
+      "quasistatic", false, "Use non-eigen fission kernel but no time derivative.");
   params.addRequiredParam<bool>("account_delayed", "Whether to account for delayed neutrons.");
   params.addRequiredParam<bool>("sss2_input",
                                 "Whether the input follows sss2 form scattering matrices.");
@@ -97,7 +99,7 @@ NtAction::act()
     {
 
       // Set up time derivatives
-      if (!getParam<bool>("eigen"))
+      if (!getParam<bool>("eigen") && !getParam<bool>("quasistatic"))
       {
         InputParameters params = _factory.getValidParams("NtTimeDerivative");
         params.set<NonlinearVariableName>("variable") = var_name;
@@ -173,27 +175,7 @@ NtAction::act()
       }
 
       // Set up CoupledFissionKernel
-      if (!getParam<bool>("eigen"))
-      {
-        InputParameters params = _factory.getValidParams("CoupledFissionKernel");
-        params.set<NonlinearVariableName>("variable") = var_name;
-        params.set<unsigned int>("group_number") = op;
-        if (isParamValid("block"))
-          params.set<std::vector<SubdomainName>>("block") =
-              getParam<std::vector<SubdomainName>>("block");
-        if (isParamValid("use_exp_form"))
-          params.set<bool>("use_exp_form") = getParam<bool>("use_exp_form");
-        std::vector<std::string> include = {"temperature"};
-        params.applySpecificParameters(parameters(), include);
-
-        params.set<unsigned int>("num_groups") = _num_groups;
-        params.set<std::vector<VariableName>>("group_fluxes") = all_var_names;
-        params.set<bool>("account_delayed") = getParam<bool>("account_delayed");
-
-        std::string kernel_name = "CoupledFissionKernel_" + var_name;
-        _problem->addKernel("CoupledFissionKernel", kernel_name, params);
-      }
-      else
+      if (getParam<bool>("eigen"))
       {
         InputParameters params = _factory.getValidParams("CoupledFissionEigenKernel");
         params.set<NonlinearVariableName>("variable") = var_name;
@@ -212,6 +194,26 @@ NtAction::act()
 
         std::string kernel_name = "CoupledFissionEigenKernel_" + var_name;
         _problem->addKernel("CoupledFissionEigenKernel", kernel_name, params);
+      }
+      else
+      {
+        InputParameters params = _factory.getValidParams("CoupledFissionKernel");
+        params.set<NonlinearVariableName>("variable") = var_name;
+        params.set<unsigned int>("group_number") = op;
+        if (isParamValid("block"))
+          params.set<std::vector<SubdomainName>>("block") =
+              getParam<std::vector<SubdomainName>>("block");
+        if (isParamValid("use_exp_form"))
+          params.set<bool>("use_exp_form") = getParam<bool>("use_exp_form");
+        std::vector<std::string> include = {"temperature"};
+        params.applySpecificParameters(parameters(), include);
+
+        params.set<unsigned int>("num_groups") = _num_groups;
+        params.set<std::vector<VariableName>>("group_fluxes") = all_var_names;
+        params.set<bool>("account_delayed") = getParam<bool>("account_delayed");
+
+        std::string kernel_name = "CoupledFissionKernel_" + var_name;
+        _problem->addKernel("CoupledFissionKernel", kernel_name, params);
       }
 
       // Set up DelayedNeutronSource
