@@ -195,7 +195,7 @@ NtAction::act()
         std::string kernel_name = "CoupledFissionEigenKernel_" + var_name;
         _problem->addKernel("CoupledFissionEigenKernel", kernel_name, params);
       }
-      else
+      if (getParam<bool>("quasistatic") || !getParam<bool>("eigen"))
       {
         InputParameters params = _factory.getValidParams("CoupledFissionKernel");
         params.set<NonlinearVariableName>("variable") = var_name;
