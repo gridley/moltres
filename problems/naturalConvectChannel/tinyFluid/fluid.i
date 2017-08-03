@@ -9,7 +9,7 @@
   sss2_input = true
   pre_concs = 'pre1 pre2 pre3 pre4 pre5 pre6'
   account_delayed = false # not used too
-  integrate_p_by_parts = false
+  integrate_p_by_parts = true
   gravity = '0 0 -981.0' # cm s^-2
   coord_type = XYZ
 []
@@ -109,6 +109,7 @@
     variable = ux
     u = ux
     v = uy
+    w = uz
     p = p
     component = 0
     block = 'fuel'
@@ -118,6 +119,7 @@
     variable = uy
     u = ux
     v = uy
+    w = uz
     p = p
     component = 1
     block = 'fuel'
@@ -144,15 +146,20 @@
     w = uz
     block = 'fuel'
   [../]
-  #[./buoyancy_z]
-  #  # only a uz kernel for Boussinesq is needed since gravity is parallel to z
-  #  type = INSBoussinesqBodyForce
-  #  variable = uz
-  #  dT = deltaT
-  #  component = 2
-  #  temperature = temp
-  #  block = 'fuel'
-  #[../]
+  [./graphiteConduction]
+    type = MatDiffusion
+    D_name = 'k'
+    variable = temp
+  [../]
+  [./buoyancy_z]
+    # only a uz kernel for Boussinesq is needed since gravity is parallel to z
+    type = INSBoussinesqBodyForce
+    variable = uz
+    dT = deltaT
+    component = 2
+    temperature = temp
+    block = 'fuel'
+  [../]
 []
 
 [BCs]
@@ -177,27 +184,27 @@
     value = 0
   [../]
 
-  # pin pressure to zero at center of channel bottom
-  [./p_zero]
-    type = DirichletBC
-    boundary = fuelTop
-    variable = p
-    value = 0
-  [../]
-  [./p_something]
-    type = DirichletBC
-    boundary = fuelBottom
-    variable = p
-    value = 9.32e-4
-  [../]
+  # # pin pressure to zero at center of channel bottom
+  # [./p_zero]
+  #   type = DirichletBC
+  #   boundary = fuelTop
+  #   variable = p
+  #   value = 0
+  # [../]
+  # [./p_something]
+  #   type = DirichletBC
+  #   boundary = fuelBottom
+  #   variable = p
+  #   value = 9.32e-4
+  # [../]
 
   # inlet has some velocity
-  #[./uz_diri_inlet]
-  #  type = DirichletBC
-  #  boundary = 'fuelBottom'
-  #  variable = uz
-  #  value = 0.0 # cm/s
-  #[../]
+  [./uz_diri_inlet]
+    type = DirichletBC
+    boundary = 'fuelBottom'
+    variable = uz
+    value = 9.0 # cm/s
+  [../]
 
   # inlet temperature
   [./fuelInletTemp]
@@ -286,7 +293,7 @@
   [./SMP]
     type = SMP
     full = true
-    solve_type = 'PJFNK'
+    solve_type = 'NEWTON'
   [../]
 []
 
@@ -294,15 +301,22 @@
   # run for at least 500 seconds => ~10 transit times
   type = Transient
   num_steps = 12500
-  dt = 0.02 # Co ~= 0.4
   petsc_options = '-snes_linesearch_monitor'
   petsc_options_iname = '-pc_type -pc_factor_shift_type -pc_factor_shift_amount'
   petsc_options_value = 'lu   NONZERO       1e-10'
   nl_rel_tol = 1e-8
-  nl_max_its = 20
+  nl_max_its = 6
   l_tol = 1e-6
-  l_max_its = 500
+  l_max_its = 100
   dtmin = 1e-5
+  [./TimeStepper]
+    dt = 0.02 # Co ~= 0.4
+    type = IterationAdaptiveDT
+    cutback_factor = 0.4
+    growth_factor = 1.2
+    optimal_iterations = 20
+  [../]
+
 []
 
 
