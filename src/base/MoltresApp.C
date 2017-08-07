@@ -201,4 +201,7 @@ MoltresApp::associateSyntax(Syntax & syntax, ActionFactory & action_factory)
   registerAction(NtAction, "add_aux_kernel");
   registerAction(NtAction, "check_copy_nodal_vars");
   registerAction(NtAction, "copy_nodal_vars");
+  registerAction(SaltLoopAction, "add_bc");
+  registerAction(SaltLoopAction, "add_postprocessor");
+  registerAction(SaltLoopAction, "add_multiapp");
 }

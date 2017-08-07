@@ -12,7 +12,8 @@ InputParameters
 validParams<SaltLoopAction>()
 {
   InputParameters params = validParams<Action>();
-  params.addRequiredParam<NonlinearVariableName>("temperature", "Name of temperature variable");
+  params.addRequiredCoupledVar<NonlinearVariableName>("temperature",
+                                                      "Name of temperature variable");
   params.addRequiredParam<std::string>("pre_name_base", "base name of DNP concentration variables");
   params.addRequiredParam<int>("num_pre_groups", "number of DNP concentration variables");
   params.addParam<Real>("temp_scaling", "The amount by which to scale the temperature variable.");
@@ -25,7 +26,7 @@ validParams<SaltLoopAction>()
   return params;
 }
 
-NtAction::NtAction(const InputParameters & params)
+SaltLoopAction::SaltLoopAction(const InputParameters & params)
   : Action(params),
     _outlet_boundary(getParam<BoundaryName>("outlet")),
     _inlet_boundary(getParam<BoundaryName>("inlet")),
@@ -35,27 +36,68 @@ NtAction::NtAction(const InputParameters & params)
 _object_suffix(getParam<std::string>("object_suffix"))
 {
   // loop through all given DNP group variable strings and add them to a
-  // vector of NonlinearVariableNames
-  std::vector<NonlinearVariableName> _prec_variables(0); // init empty
+  // vector of strings
+  std::vector<std::string> _prec_variables(0); // init empty
+  mooseAssert(_num_pre_groups >= 1);
   for (int i = 1; i <= _num_pre_groups; ++i)
   {
+    _prec_variables.push_back(_pre_name_base + Moose::stringify(i));
+  }
+}
+
+void
+SaltLoopAction::act()
+{
+  if (_current_task == "add_multiapp")
+  {
+    // add the loop multiapp
   }
 
-  void NtAction::act()
+  if (_current_task == "add_postprocessor")
   {
-    // add postprocessors to main app for the salt loop
+    for (std::vector<std::string>::iterator it = _prec_variables.begin();
+         it != _prec_variables.end();
+         ++it)
     {
-      // receiver to get quantities at core inlet
-      InputParameters p = _factory.getValidParams("Receiver");
-      std::vector<std::string> exeOpt(0); // when to execute Receiver from loop
-      exeOpt.push_back("initial");
-      exeOpt.push_back("timestep_begin");
-      p.set<std::vector<std::string>>("execute_on", exeOpt);
-      _problem->AddPostprocessor("Receiver", "loopReceiver" + _object_suffix, p);
-    }
-    {
-      // postprocessors that calculate averages at the core outlet
-        InputParameters p = _factory.getValidParams("
+      // main App receiver of data
+      {
+        InputParameters p = _factory.getValidParams("Receiver");
+        std::vector<std::string> exeOpt(0); // when to execute Receiver from loop
+        exeOpt.push_back("initial");
+        exeOpt.push_back("timestep_begin");
+        p.set<std::vector<std::string>>("execute_on", exeOpt);
+        _problem->AddPostprocessor("Receiver", "loopReceiver" + _object_suffix, p);
+      }
 
-        // add boundary PostprocessorDirichlet boundaries to the main app
+      // sub app receiver of data
+      {
+          // yet to do stuff
+      }
+
+      // add SideAverageValues for mainapp outlet
+      {
+        InputParameters p = _factory.getValidParams("SideAverageValue");
+      }
+
+      // add SideAverageValues for subapp outlet
+      {
+        // yet to do stuff
+      }
     }
+  }
+
+  if (_current_task == "add_bc")
+  {
+    for (std::vector<std::string>::iterator it = _prec_variables.begin();
+         it != _prec_variables.end();
+         ++it)
+    {
+      // add the postprocessor-set dirichlet value in main problem
+      {}
+
+      // add the postprocessor-set dirichlet value in sub app
+      {
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@ public:
   virtual void act();
 
 protected:
+  std::vector<NonlinearVariableName> _prec_variables;
 };
 
 template <>
