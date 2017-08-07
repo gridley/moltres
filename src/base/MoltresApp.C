@@ -67,6 +67,7 @@
 // Actions
 #include "PrecursorAction.h"
 #include "NtAction.h"
+#include "SaltLoopAction.h"
 
 // DiracKernels
 #include "DiracHX.h"
@@ -183,6 +184,7 @@ MoltresApp::associateSyntax(Syntax & syntax, ActionFactory & action_factory)
 {
   syntax.registerActionSyntax("PrecursorAction", "Precursors/*");
   syntax.registerActionSyntax("NtAction", "Nt");
+  syntax.registerActionSyntax("SaltLoopAction", "SaltLoop/*");
 
   registerAction(PrecursorAction, "add_kernel");
   registerAction(PrecursorAction, "add_bc");
