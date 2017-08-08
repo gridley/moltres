@@ -32,8 +32,8 @@ SaltLoopAction::SaltLoopAction(const InputParameters & params)
     _inlet_boundary(getParam<BoundaryName>("inlet")),
     _temperature(getParam<NonlinearVariableName>("temperature")),
     _pre_name_base(getParam<std::string>("pre_name_base")),
-    _num_pre_groups(getParam<int>("num_pre_groups"));
-_object_suffix(getParam<std::string>("object_suffix"))
+    _num_pre_groups(getParam<int>("num_pre_groups")),
+    _object_suffix(getParam<std::string>("object_suffix"))
 {
   // loop through all given DNP group variable strings and add them to a
   // vector of strings
@@ -43,14 +43,45 @@ _object_suffix(getParam<std::string>("object_suffix"))
   {
     _prec_variables.push_back(_pre_name_base + Moose::stringify(i));
   }
+
+  // to make an input file for the subapp, set aside a file name
+  std::string _my_inp_file_name = "loopApp"+_object_prefix + ".i";
 }
+
+// some variables that exist from FEProblem
+// _multi_apps
+// _transient_multi_apps
+// _transfers
+
 
 void
 SaltLoopAction::act()
 {
   if (_current_task == "add_multiapp")
   {
+    // set up multiapp params
+    InputParameters loop_params = _factory.getValidParams("TransientMultiApp");
+    loop_params.set<MooseEnum>("app_type") = "MoltresApp";
+    loop_params.set<MultiMooseEnum>("execute_on", "timestep_begin");
+    // hopefully will not need multiapp positions, uncomment if they're
+    // really, really needed
+    // loop_params.set<std::vector<Point>>("positions") = {Point()};
+
     // add the loop multiapp
+    _problem->addMultiApp("MoltresApp", "loopApp"+_object_prefix, multiAppParams);
+
+    // need to do this stuff to the multiapp
+    // add precursor variables (w/ DG kernels, through PreAction)
+    // add the interface kernel for the HX
+    // add left and right BCs
+    // add generatedMesh
+    // copy fuel material into this app
+    // loopEndTemp and coreEndTemp get set elsewhere
+    // copy executioner settings from main into this one
+    // copy any functions into this one
+    // copy any controls into this one
+    // set preconditioning to type=SMP, full=true
+    // outputs
   }
 
   if (_current_task == "add_postprocessor")

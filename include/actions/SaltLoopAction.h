@@ -12,6 +12,7 @@ public:
 
 protected:
   std::vector<NonlinearVariableName> _prec_variables;
+  std::string _my_inp_file_name;
 };
 
 template <>
